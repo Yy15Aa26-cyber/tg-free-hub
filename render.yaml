@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: tg-free-hub
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_IDS
+        sync: false
+      - key: PUBLIC_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true

@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>הספרייה</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-bg-color,#f2f5f8);
+  --card:var(--tg-theme-secondary-bg-color,#ffffff);
+  --ink:var(--tg-theme-text-color,#17212b);
+  --mute:var(--tg-theme-hint-color,#6b7a8a);
+  --accent:var(--tg-theme-button-color,#0b6e6e);
+  --accent-ink:var(--tg-theme-button-text-color,#ffffff);
+  --line:color-mix(in srgb,var(--ink) 12%,transparent);
+  --warn:#b7791f; --bad:#c0392b; --ok:#1e8e5a;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 Rubik,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  display:flex;flex-direction:column;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+header{padding:14px 16px 8px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+header h1{font-size:22px;font-weight:700;margin:0}
+header span{color:var(--mute);font-size:14px}
+main{flex:1;overflow-y:auto;padding:0 12px 16px;-webkit-overflow-scrolling:touch}
+nav{display:flex;border-top:1px solid var(--line);background:var(--card);padding-bottom:var(--safe-b)}
+nav button{flex:1;background:none;border:0;padding:12px 4px;color:var(--mute);font-weight:500;
+  border-top:3px solid transparent;cursor:pointer}
+nav button[aria-selected=true]{color:var(--accent);border-top-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hidden{display:none!important}
+
+.field{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;padding:10px 16px;font-weight:500;cursor:pointer}
+.btn.ghost{background:none;color:var(--accent);border:1px solid var(--line)}
+.btn.danger{background:none;color:var(--bad);border:1px solid var(--line)}
+.btn.small{padding:6px 10px;font-size:14px;border-radius:9px}
+.btn:disabled{opacity:.5}
+.empty{color:var(--mute);text-align:center;padding:40px 16px}
+
+/* file rows: the size is the first thing the eye lands on */
+.file{display:flex;align-items:center;gap:12px;width:100%;text-align:start;background:var(--card);
+  border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-top:8px;cursor:pointer}
+.file .size{flex:none;min-width:76px;text-align:center;font-weight:700;font-size:17px;line-height:1.15;
+  font-variant-numeric:tabular-nums;color:var(--accent);direction:ltr}
+.file .size small{display:block;font-weight:400;font-size:11px;color:var(--mute)}
+.file .meta{min-width:0;flex:1}
+.file .name{font-weight:500;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.file .sub{color:var(--mute);font-size:13px}
+.file[aria-busy=true]{opacity:.55}
+
+/* chat */
+#chatLog{display:flex;flex-direction:column;gap:8px;padding-bottom:8px}
+.msg{max-width:88%;padding:9px 13px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.me{align-self:flex-start;background:var(--accent);color:var(--accent-ink);border-end-start-radius:4px}
+.msg.ai{align-self:flex-end;background:var(--card);border:1px solid var(--line);border-end-end-radius:4px}
+.msg .via{display:block;margin-top:4px;font-size:11px;color:var(--mute)}
+.composer{display:flex;gap:8px;padding:8px 12px;border-top:1px solid var(--line);background:var(--bg)}
+.composer textarea{flex:1;resize:none;max-height:120px}
+
+/* admin */
+.prov{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
+.prov.off{opacity:.6}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row.between{justify-content:space-between}
+.prov h3{margin:0;font-size:17px}
+.tag{font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:99px;padding:1px 8px}
+.key{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.key code{direction:ltr;font-family:ui-monospace,Menlo,monospace}
+.key .grow{flex:1;min-width:0}
+.st-ok{color:var(--ok)} .st-cool{color:var(--warn)} .st-off{color:var(--mute)}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px;display:grid;gap:8px}
+.sheet label{font-size:13px;color:var(--mute)}
+.hint{font-size:13px;color:var(--mute)}
+a{color:var(--accent)}
+
+#toast{position:fixed;inset-inline:16px;bottom:calc(72px + var(--safe-b));background:var(--ink);color:var(--bg);
+  padding:10px 14px;border-radius:12px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;text-align:center;z-index:9}
+#toast.show{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+.login{max-width:380px;margin:12vh auto 0;display:grid;gap:10px;padding:0 16px}
+.login h2{margin:0 0 4px}
+</style>
+</head>
+<body>
+<header><h1 id="title">הספרייה</h1><span id="count"></span></header>
+
+<main id="view"></main>
+
+<div id="composer" class="composer hidden">
+  <textarea id="chatIn" class="field" rows="1" placeholder="כתוב הודעה…" aria-label="הודעה לעוזר"></textarea>
+  <button id="chatSend" class="btn">שלח</button>
+</div>
+
+<nav id="tabs" class="hidden" role="tablist">
+  <button role="tab" data-tab="search" aria-selected="true">חיפוש</button>
+  <button role="tab" data-tab="chat" aria-selected="false">עוזר</button>
+  <button role="tab" data-tab="admin" aria-selected="false" id="adminTab" class="hidden">ניהול</button>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const BASE = (window.APP_CONFIG && APP_CONFIG.API_BASE || "").replace(/\/$/, "");
+const $ = (s) => document.querySelector(s);
+const state = { me: null, tab: "search", token: localStorage.getItem("hub_token") || "", providers: [], presets: {} };
+
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (v === true) el.setAttribute(k, "");
+    else if (v !== false && v != null) el.setAttribute(k, v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) el.append(c.nodeType ? c : document.createTextNode(c));
+  return el;
+}
+let toastT;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+async function api(path, opts = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (tg && tg.initData) headers["X-Init-Data"] = tg.initData;
+  else if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  let res;
+  try { res = await fetch(BASE + path, { ...opts, headers, body: opts.body ? JSON.stringify(opts.body) : undefined }); }
+  catch { throw new Error("אין חיבור לשרת. אם הוא ישן, נסה שוב בעוד חצי דקה."); }
+  let data = {};
+  try { data = await res.json(); } catch {}
+  if (res.status === 401 && !(tg && tg.initData)) { state.token = ""; localStorage.removeItem("hub_token"); showLogin(); }
+  if (!res.ok) throw new Error(data.detail || "שגיאה " + res.status);
+  return data;
+}
+
+/* ---------------- login (APK / browser) ---------------- */
+function showLogin() {
+  $("#tabs").classList.add("hidden"); $("#composer").classList.add("hidden");
+  const id = h("input", { class: "field", inputmode: "numeric", placeholder: "מזהה טלגרם מספרי", "aria-label": "מזהה טלגרם", dir: "ltr" });
+  const code = h("input", { class: "field hidden", inputmode: "numeric", placeholder: "קוד בן 6 ספרות", "aria-label": "קוד", dir: "ltr", maxlength: 6 });
+  const go = h("button", { class: "btn" }, "שלח לי קוד בטלגרם");
+  let step = 1;
+  go.onclick = async () => {
+    go.disabled = true;
+    try {
+      if (step === 1) {
+        await api("/api/auth/request", { method: "POST", body: { user_id: Number(id.value) } });
+        step = 2; code.classList.remove("hidden"); id.disabled = true; go.textContent = "כניסה"; code.focus();
+        toast("אם אתה מורשה, הקוד נשלח אליך בבוט");
+      } else {
+        const r = await api("/api/auth/verify", { method: "POST", body: { user_id: Number(id.value), code: code.value } });
+        state.token = r.token; localStorage.setItem("hub_token", r.token); boot();
+      }
+    } catch (e) { toast(e.message); } finally { go.disabled = false; }
+  };
+  $("#view").replaceChildren(h("div", { class: "login" },
+    h("h2", {}, "כניסה"),
+    h("p", { class: "hint" }, "הבוט ישלח קוד חד-פעמי לצ'אט שלך בטלגרם. כדי לקבל אותו, שלח קודם /start לבוט."),
+    id, code, go));
+}
+
+/* ---------------- search ---------------- */
+let searchT;
+function viewSearch() {
+  const input = h("input", { class: "field", type: "search", placeholder: "חפש קובץ או סרטון…", "aria-label": "חיפוש", enterkeyhint: "search" });
+  const list = h("div", { "aria-live": "polite" });
+  async function run() {
+    try {
+      const r = await api("/api/search?q=" + encodeURIComponent(input.value.trim()));
+      list.replaceChildren(...(r.results.length ? r.results.map(fileRow)
+        : [h("p", { class: "empty" }, input.value ? "לא נמצאו תוצאות. נסה מילה אחרת." : "הספרייה ריקה. שלח קבצים לבוט או הוסף אותו כמנהל לערוץ.")]));
+    } catch (e) { list.replaceChildren(h("p", { class: "empty" }, e.message)); }
+  }
+  input.addEventListener("input", () => { clearTimeout(searchT); searchT = setTimeout(run, 250); });
+  $("#view").replaceChildren(h("div", { style: "position:sticky;top:0;padding:4px 0 6px;background:var(--bg)" }, input), list);
+  run();
+}
+function fileRow(f) {
+  const [num, unit] = f.size_h.split(" ");
+  const icon = { video: "סרטון", audio: "אודיו" }[f.kind] || "קובץ";
+  const el = h("button", { class: "file" },
+    h("div", { class: "size" }, num, h("small", {}, unit)),
+    h("div", { class: "meta" }, h("div", { class: "name" }, f.name), h("div", { class: "sub" }, icon + (f.caption ? " · " + f.caption.slice(0, 40) : ""))));
+  el.onclick = async () => {
+    el.setAttribute("aria-busy", "true");
+    try { await api("/api/send", { method: "POST", body: { id: f.id } }); toast("נשלח לצ'אט שלך עם הבוט"); if (tg) tg.HapticFeedback && tg.HapticFeedback.notificationOccurred("success"); }
+    catch (e) { toast(e.message); } finally { el.removeAttribute("aria-busy"); }
+  };
+  return el;
+}
+
+/* ---------------- chat ---------------- */
+function addMsg(cls, text, via) {
+  const log = $("#chatLog");
+  const m = h("div", { class: "msg " + cls }, text, via ? h("span", { class: "via" }, via) : null);
+  log.append(m); $("#view").scrollTop = $("#view").scrollHeight; return m;
+}
+function viewChat() {
+  $("#view").replaceChildren(h("div", { id: "chatLog" },
+    h("p", { class: "empty", id: "chatEmpty" }, state.me.ai_ready ? "שאל אותי כל דבר, או בקש למצוא קובץ." : "עוד לא הוגדר מפתח AI. " + (state.me.is_admin ? "הוסף אחד במסך הניהול." : "פנה למנהל."))));
+  $("#composer").classList.remove("hidden");
+}
+async function sendChat() {
+  const inp = $("#chatIn"), text = inp.value.trim(); if (!text) return;
+  $("#chatEmpty") && $("#chatEmpty").remove();
+  inp.value = ""; addMsg("me", text);
+  const wait = addMsg("ai", "…"); $("#chatSend").disabled = true;
+  try {
+    const r = await api("/api/chat", { method: "POST", body: { message: text } });
+    wait.firstChild.textContent = r.reply;
+    wait.append(h("span", { class: "via" }, r.provider + " · " + r.model));
+    if (r.files && r.files.length) r.files.forEach((f) => $("#chatLog").append(fileRow(f)));
+  } catch (e) { wait.textContent = e.message; }
+  finally { $("#chatSend").disabled = false; $("#view").scrollTop = $("#view").scrollHeight; }
+}
+
+/* ---------------- admin ---------------- */
+async function loadAdmin() {
+  const [p, pr] = await Promise.all([api("/api/admin/providers"), api("/api/admin/presets")]);
+  state.providers = p.providers; state.presets = pr; viewAdmin();
+}
+function viewAdmin() {
+  const v = $("#view");
+  const add = h("button", { class: "btn", style: "margin-top:8px" }, "הוסף מודל או מפתח");
+  const sheetHost = h("div");
+  add.onclick = () => sheetHost.replaceChildren(addSheet(sheetHost));
+  const nodes = state.providers.map(provCard);
+  v.replaceChildren(
+    h("p", { class: "hint" }, "הבוט מנסה את הספקים לפי העדיפות (מספר נמוך קודם). אם מפתח נגמר או מוגבל, הוא עובר אוטומטית למפתח או לספק הבא."),
+    add, sheetHost,
+    ...(nodes.length ? nodes : [h("p", { class: "empty" }, "אין עדיין מודלים. לחץ על 'הוסף מודל או מפתח'.")]),
+    h("div", { class: "row", style: "margin-top:16px" },
+      h("button", { class: "btn ghost small", onclick: async () => { try { await api("/api/admin/backup", { method: "POST" }); toast("הגיבוי נשלח אליך בטלגרם"); } catch (e) { toast(e.message); } } }, "שלח לי גיבוי")));
+}
+function addSheet(host) {
+  const presets = state.presets;
+  const sel = h("select", { class: "field" }, Object.entries(presets).map(([k, p]) => h("option", { value: k }, p.title)));
+  const name = h("input", { class: "field", placeholder: "שם הספק (באנגלית, בלי רווחים)", dir: "ltr" });
+  const type = h("select", { class: "field" }, ["openai", "gemini", "anthropic"].map((t) => h("option", { value: t }, t === "openai" ? "תואם OpenAI" : t)));
+  const url = h("input", { class: "field", placeholder: "כתובת בסיס, למשל https://api.example.com/v1", dir: "ltr" });
+  const model = h("input", { class: "field", placeholder: "שם המודל", dir: "ltr" });
+  const key = h("input", { class: "field", placeholder: "מפתח API", dir: "ltr", type: "password", autocomplete: "off" });
+  const link = h("a", { target: "_blank", rel: "noopener" }, "לקבלת מפתח");
+  const custom = h("div", { class: "sheet", style: "padding:0;border:0;margin:0" }, name, type, url);
+  const sync = () => {
+    const p = presets[sel.value]; const isCustom = sel.value === "custom";
+    custom.classList.toggle("hidden", !isCustom);
+    model.value = p.model; type.value = p.type; url.value = p.base_url;
+    link.classList.toggle("hidden", !p.keys_url); link.href = p.keys_url || "#";
+  };
+  sel.onchange = sync; sync();
+  const save = h("button", { class: "btn" }, "שמור");
+  save.onclick = async () => {
+    save.disabled = true;
+    try {
+      const body = sel.value === "custom"
+        ? { name: name.value, type: type.value, base_url: url.value, model: model.value, key: key.value || null }
+        : { preset: sel.value, model: model.value || null, key: key.value || null };
+      await api("/api/admin/providers", { method: "POST", body });
+      toast("נשמר"); loadAdmin();
+    } catch (e) { toast(e.message); } finally { save.disabled = false; }
+  };
+  return h("div", { class: "sheet" },
+    h("label", {}, "ספק"), sel, custom,
+    h("label", {}, "מודל"), model,
+    h("label", {}, "מפתח API (אפשר להוסיף אחר כך)"), key, link,
+    h("div", { class: "row" }, save, h("button", { class: "btn ghost", onclick: () => host.replaceChildren() }, "ביטול")));
+}
+function provCard(p) {
+  const act = async (fn, okMsg) => { try { await fn(); if (okMsg) toast(okMsg); loadAdmin(); } catch (e) { toast(e.message); } };
+  const modelIn = h("input", { class: "field", value: p.model, dir: "ltr", list: "ml" + p.id, "aria-label": "מודל" });
+  const dl = h("datalist", { id: "ml" + p.id });
+  const keyIn = h("input", { class: "field", placeholder: "הדבק מפתח נוסף", dir: "ltr", type: "password", autocomplete: "off", style: "flex:1;min-width:0" });
+  const testOut = h("span", { class: "hint" });
+  return h("section", { class: "prov" + (p.enabled ? "" : " off") },
+    h("div", { class: "row between" },
+      h("div", { class: "row" }, h("h3", {}, p.name), h("span", { class: "tag" }, p.type)),
+      h("div", { class: "row" },
+        h("button", { class: "btn ghost small", title: "קודם", "aria-label": "העלה בעדיפות", onclick: () => act(() => api("/api/admin/providers/" + p.id, { method: "PATCH", body: { priority: Math.max(1, p.priority - 15) } })) }, "▲"),
+        h("span", { class: "tag" }, "עדיפות " + p.priority),
+        h("button", { class: "btn ghost small", "aria-label": "הורד בעדיפות", onclick: () => act(() => api("/api/admin/providers/" + p.id, { method: "PATCH", body: { priority: p.priority + 15 } })) }, "▼"))),
+    h("div", { class: "row", style: "margin-top:8px" }, modelIn, dl,
+      h("button", { class: "btn ghost small", onclick: () => act(() => api("/api/admin/providers/" + p.id, { method: "PATCH", body: { model: modelIn.value } }), "המודל עודכן") }, "עדכן"),
+      h("button", { class: "btn ghost small", onclick: async () => {
+        try { const r = await api("/api/admin/providers/" + p.id + "/models"); dl.replaceChildren(...r.models.map((m) => h("option", { value: m }))); toast(r.models.length + " מודלים זמינים. התחל להקליד לבחירה"); }
+        catch (e) { toast(e.message); } } }, "טען מודלים")),
+    ...p.keys.map((k) => h("div", { class: "key" },
+      h("div", { class: "grow" }, h("code", {}, k.hint), " ", k.label,
+        h("div", { class: k.cooldown ? "st-cool" : k.enabled ? "st-ok" : "st-off" },
+          k.cooldown ? `במנוחה עוד ${k.cooldown} שניות` : k.enabled ? "פעיל" : "כבוי", ` · ${k.uses} שימושים`),
+        k.last_error ? h("div", { class: "hint" }, k.last_error.slice(0, 120)) : null),
+      h("button", { class: "btn ghost small", onclick: () => act(() => api("/api/admin/keys/" + k.id, { method: "PATCH", body: k.cooldown ? { reset: true } : { enabled: !k.enabled } })) }, k.cooldown ? "אפס" : k.enabled ? "כבה" : "הפעל"),
+      h("button", { class: "btn danger small", onclick: () => confirm("למחוק את המפתח?") && act(() => api("/api/admin/keys/" + k.id, { method: "DELETE" })) }, "מחק"))),
+    h("div", { class: "row", style: "margin-top:8px" }, keyIn,
+      h("button", { class: "btn small", onclick: () => keyIn.value && act(() => api("/api/admin/providers/" + p.id + "/keys", { method: "POST", body: { key: keyIn.value } }), "המפתח נוסף") }, "הוסף")),
+    h("div", { class: "row", style: "margin-top:10px" },
+      h("button", { class: "btn ghost small", onclick: async (e) => { e.target.disabled = true; testOut.textContent = "בודק…";
+        try { const r = await api("/api/admin/providers/" + p.id + "/test", { method: "POST" }); testOut.textContent = r.ok ? `✔ עובד (${r.ms}ms)` : "✘ " + r.error; }
+        catch (err) { testOut.textContent = err.message; } finally { e.target.disabled = false; } } }, "בדוק חיבור"),
+      h("button", { class: "btn ghost small", onclick: () => act(() => api("/api/admin/providers/" + p.id, { method: "PATCH", body: { enabled: !p.enabled } })) }, p.enabled ? "השבת ספק" : "הפעל ספק"),
+      h("button", { class: "btn danger small", onclick: () => confirm("למחוק את הספק וכל המפתחות שלו?") && act(() => api("/api/admin/providers/" + p.id, { method: "DELETE" })) }, "מחק ספק"),
+      testOut));
+}
+
+/* ---------------- shell ---------------- */
+function setTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll("nav button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
+  $("#composer").classList.add("hidden");
+  $("#title").textContent = { search: "הספרייה", chat: "העוזר", admin: "ניהול מודלים" }[tab];
+  if (tab === "search") viewSearch();
+  else if (tab === "chat") viewChat();
+  else loadAdmin().catch((e) => toast(e.message));
+}
+async function boot() {
+  try {
+    state.me = await api("/api/me");
+  } catch (e) {
+    if (!(tg && tg.initData) && !state.token) return showLogin();
+    $("#view").replaceChildren(h("p", { class: "empty" }, e.message)); return;
+  }
+  $("#count").textContent = state.me.files + " קבצים";
+  $("#tabs").classList.remove("hidden");
+  $("#adminTab").classList.toggle("hidden", !state.me.is_admin);
+  setTab(state.tab);
+}
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+$("#chatSend").addEventListener("click", sendChat);
+$("#chatIn").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); } });
+boot();
+</script>
+</body>
+</html>

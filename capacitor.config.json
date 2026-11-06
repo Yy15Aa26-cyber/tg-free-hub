@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.hub",
+  "appName": "הספרייה",
+  "webDir": "www",
+  "server": { "androidScheme": "https" }
+}
